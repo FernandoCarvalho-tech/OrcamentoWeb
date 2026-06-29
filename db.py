@@ -64,13 +64,17 @@ def init_db():
             endereco TEXT,
             telefone TEXT,
             email TEXT,
-            logo_path TEXT,
+            logo_data BYTEA,
+            logo_mimetype TEXT,
             smtp_servidor TEXT,
             smtp_porta INTEGER,
             smtp_usuario TEXT,
             smtp_senha TEXT
         )
     """)
+    cur.execute("ALTER TABLE empresa ADD COLUMN IF NOT EXISTS logo_data BYTEA")
+    cur.execute("ALTER TABLE empresa ADD COLUMN IF NOT EXISTS logo_mimetype TEXT")
+    cur.execute("ALTER TABLE empresa DROP COLUMN IF EXISTS logo_path")
     cur.execute("INSERT INTO empresa (id) VALUES (1) ON CONFLICT (id) DO NOTHING")
 
     cur.execute("""

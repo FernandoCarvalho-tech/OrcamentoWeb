@@ -1,4 +1,5 @@
 import os
+import io
 from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -36,11 +37,11 @@ def gerar_pdf_orcamento(empresa, cliente, orcamento, itens):
 
     elements = []
 
-    logo_path = empresa["logo_path"] if empresa and empresa["logo_path"] else None
+    logo_data = empresa["logo_data"] if empresa and empresa["logo_data"] else None
     header_cells = []
-    if logo_path and os.path.exists(logo_path):
+    if logo_data:
         try:
-            img = Image(logo_path, width=35 * mm, height=35 * mm)
+            img = Image(io.BytesIO(bytes(logo_data)), width=35 * mm, height=35 * mm)
             header_cells.append(img)
         except Exception:
             pass

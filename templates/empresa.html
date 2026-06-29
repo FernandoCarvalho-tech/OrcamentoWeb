@@ -21,8 +21,11 @@
       </div>
     </div>
     <label>Logo</label>
+    {% if empresa.logo_data %}
+    <p><img src="{{ url_for('empresa_logo') }}" alt="Logo atual" style="max-height:80px; display:block; margin-bottom:8px;"></p>
+    {% endif %}
     <input type="file" name="logo" accept="image/*">
-    {% if empresa.logo_path %}<p style="font-size:13px;color:#777;">Logo atual configurada.</p>{% endif %}
+    <p style="font-size:13px;color:#777;">Envie uma nova imagem só se quiser substituir a logo atual.</p>
 
     <h3 style="margin-top:24px;">Configuração de Email (SMTP Gmail)</h3>
     <div class="row">

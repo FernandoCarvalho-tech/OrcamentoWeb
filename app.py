@@ -1,6 +1,6 @@
 import os
 import json
-import shutil
+import psycopg2
 from datetime import date
 from flask import (
     Flask, render_template, request, redirect, url_for, flash,
@@ -12,8 +12,6 @@ from pdf_gen import gerar_pdf_orcamento, OUTPUT_DIR
 from email_sender import enviar_orcamento_email
 
 BASE_DIR = os.path.dirname(__file__)
-LOGO_DIR = os.path.join(BASE_DIR, "data", "logo")
-os.makedirs(LOGO_DIR, exist_ok=True)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-troque-em-producao")
@@ -89,15 +87,12 @@ def empresa():
     conn = get_conn()
     if request.method == "POST":
         logo_file = request.files.get("logo")
-        logo_path = None
-        row = conn.execute("SELECT logo_path FROM empresa WHERE id=1").fetchone()
-        if row:
-            logo_path = row["logo_path"]
+        row_atual = conn.execute("SELECT logo_data, logo_mimetype FROM empresa WHERE id=1").fetchone()
+        logo_data = row_atual["logo_data"] if row_atual else None
+        logo_mimetype = row_atual["logo_mimetype"] if row_atual else None
         if logo_file and logo_file.filename:
-            ext = os.path.splitext(logo_file.filename)[1]
-            dest = os.path.join(LOGO_DIR, "logo" + ext)
-            logo_file.save(dest)
-            logo_path = dest
+            logo_data = logo_file.read()
+            logo_mimetype = logo_file.mimetype
 
         try:
             porta = int(request.form.get("smtp_porta") or 587)
@@ -105,12 +100,12 @@ def empresa():
             porta = 587
 
         conn.execute(
-            """UPDATE empresa SET nome=?, cnpj=?, endereco=?, telefone=?, email=?, logo_path=?,
+            """UPDATE empresa SET nome=?, cnpj=?, endereco=?, telefone=?, email=?, logo_data=?, logo_mimetype=?,
                 smtp_servidor=?, smtp_porta=?, smtp_usuario=?, smtp_senha=? WHERE id=1""",
             (
                 request.form.get("nome"), request.form.get("cnpj"),
                 request.form.get("endereco"), request.form.get("telefone"),
-                request.form.get("email"), logo_path,
+                request.form.get("email"), psycopg2.Binary(logo_data) if logo_data else None, logo_mimetype,
                 request.form.get("smtp_servidor") or "smtp.gmail.com",
                 porta, request.form.get("smtp_usuario"), request.form.get("smtp_senha"),
             ),
@@ -123,6 +118,16 @@ def empresa():
     row = conn.execute("SELECT * FROM empresa WHERE id=1").fetchone()
     conn.close()
     return render_template("empresa.html", empresa=row)
+
+
+@app.route("/empresa/logo")
+def empresa_logo():
+    conn = get_conn()
+    row = conn.execute("SELECT logo_data, logo_mimetype FROM empresa WHERE id=1").fetchone()
+    conn.close()
+    if not row or not row["logo_data"]:
+        return "", 404
+    return app.response_class(bytes(row["logo_data"]), mimetype=row["logo_mimetype"] or "image/png")
 
 
 # ---------- Clientes ----------
