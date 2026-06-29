@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Novo Orçamento{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Novo Orçamento</h2>
+  <form id="form-orcamento" method="POST" action="{{ url_for('criar_orcamento') }}">
+    <label>Cliente*</label>
+    <select id="cliente_id" name="cliente_id" required>
+      <option value="">Selecione...</option>
+      {% for c in clientes %}
+      <option value="{{ c.id }}">{{ c.nome }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Validade (dias)</label>
+    <input type="number" id="validade_dias" name="validade_dias" value="15">
+
+    <input type="hidden" id="itens_json" name="itens_json">
+
+    <h3 style="margin-top:20px;">Adicionar item</h3>
+    <div class="row">
+      <div>
+        <label>Tipo</label>
+        <select id="tipo">
+          <option value="produto">Produto</option>
+          <option value="mao_de_obra">Mão de obra</option>
+        </select>
+      </div>
+      <div>
+        <label>Item do catálogo</label>
+        <select id="catalogo_item"></select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Quantidade</label>
+        <input type="text" id="quantidade" value="1">
+      </div>
+      <div>
+        <label>Valor unitário</label>
+        <input type="text" id="valor_unitario" value="0">
+      </div>
+    </div>
+    <button type="button" onclick="adicionarItem()">Adicionar item</button>
+
+    <table id="tabela-itens" style="margin-top:16px;">
+      <thead>
+        <tr><th>Tipo</th><th>Descrição</th><th>Un.</th><th>Qtd</th><th>Vl. Unit.</th><th>Vl. Total</th><th></th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="total-box">Total: R$ <span id="total-display">0.00</span></div>
+
+    <label>Observações</label>
+    <textarea id="observacoes" name="observacoes" rows="3"></textarea>
+
+    <button type="submit">Salvar e gerar PDF</button>
+  </form>
+</div>
+
+<script>
+const catalogo = {{ catalogo_json|safe }};
+let itens = [];
+
+function popularCatalogo() {
+  const tipo = document.getElementById('tipo').value;
+  const select = document.getElementById('catalogo_item');
+  select.innerHTML = '';
+  catalogo[tipo].forEach((item, idx) => {
+    const opt = document.createElement('option');
+    opt.value = idx;
+    opt.textContent = item.descricao;
+    select.appendChild(opt);
+  });
+  preencherValorUnitario();
+}
+
+function preencherValorUnitario() {
+  const tipo = document.getElementById('tipo').value;
+  const idx = document.getElementById('catalogo_item').value;
+  if (idx === '' || !catalogo[tipo][idx]) return;
+  const item = catalogo[tipo][idx];
+  document.getElementById('valor_unitario').value = item.valor.toFixed(2);
+}
+
+document.getElementById('tipo').addEventListener('change', popularCatalogo);
+document.getElementById('catalogo_item').addEventListener('change', preencherValorUnitario);
+
+function adicionarItem() {
+  const tipo = document.getElementById('tipo').value;
+  const idx = document.getElementById('catalogo_item').value;
+  if (idx === '' || !catalogo[tipo].length) { alert('Cadastre itens em Produtos / Mão de Obra primeiro.'); return; }
+  const catItem = catalogo[tipo][idx];
+  const quantidade = parseFloat(document.getElementById('quantidade').value.replace(',', '.')) || 0;
+  const valorUnitario = parseFloat(document.getElementById('valor_unitario').value.replace(',', '.')) || 0;
+  const valorTotal = quantidade * valorUnitario;
+
+  const item = {
+    tipo: tipo,
+    descricao: catItem.descricao,
+    unidade: catItem.unidade,
+    quantidade: quantidade,
+    valor_unitario: valorUnitario,
+    valor_total: valorTotal,
+  };
+  itens.push(item);
+  renderTabela();
+}
+
+function removerItem(i) {
+  itens.splice(i, 1);
+  renderTabela();
+}
+
+function renderTabela() {
+  const tbody = document.querySelector('#tabela-itens tbody');
+  tbody.innerHTML = '';
+  let total = 0;
+  itens.forEach((item, i) => {
+    total += item.valor_total;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td data-label="Tipo">${item.tipo === 'produto' ? 'Produto' : 'Mão de obra'}</td>
+      <td data-label="Descrição">${item.descricao}</td>
+      <td data-label="Un.">${item.unidade || ''}</td>
+      <td data-label="Qtd">${item.quantidade.toFixed(2)}</td>
+      <td data-label="Vl. Unit.">R$ ${item.valor_unitario.toFixed(2)}</td>
+      <td data-label="Vl. Total">R$ ${item.valor_total.toFixed(2)}</td>
+      <td><button type="button" class="danger" onclick="removerItem(${i})">x</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('total-display').textContent = total.toFixed(2);
+}
+
+document.getElementById('form-orcamento').addEventListener('submit', function(e) {
+  if (!itens.length) {
+    alert('Adicione ao menos um item ao orçamento.');
+    e.preventDefault();
+    return;
+  }
+  document.getElementById('itens_json').value = JSON.stringify(itens);
+});
+
+popularCatalogo();
+</script>
+{% endblock %}

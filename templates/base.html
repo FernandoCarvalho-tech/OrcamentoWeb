@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>{% block title %}Orçamentos{% endblock %}</title>
+<link rel="manifest" href="{{ url_for('manifest') }}">
+<meta name="theme-color" content="#2c3e50">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+<style>
+  :root { --primary: #2c3e50; --accent: #2980b9; --bg: #f4f6f8; --danger: #c0392b; --success: #27ae60; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #222; }
+  header { background: var(--primary); color: white; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 18px; margin: 0; }
+  nav { display: flex; gap: 4px; overflow-x: auto; background: #1f2d3a; padding: 6px 8px; }
+  nav a { color: #cfd8e3; text-decoration: none; padding: 8px 12px; border-radius: 6px; font-size: 14px; white-space: nowrap; }
+  nav a.active, nav a:hover { background: var(--accent); color: white; }
+  main { max-width: 900px; margin: 0 auto; padding: 16px; }
+  .card { background: white; border-radius: 10px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  label { display: block; font-size: 13px; color: #555; margin: 10px 0 4px; }
+  input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
+  button, .btn { background: var(--accent); color: white; border: none; padding: 10px 16px; border-radius: 6px; font-size: 15px; cursor: pointer; text-decoration: none; display: inline-block; margin-top: 10px; }
+  button.secondary, .btn.secondary { background: #7f8c8d; }
+  button.danger, .btn.danger { background: var(--danger); }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+  th, td { padding: 8px; border-bottom: 1px solid #e0e0e0; text-align: left; }
+  th { background: var(--primary); color: white; }
+  .flash { padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 14px; }
+  .flash.success { background: #d4efdf; color: #196f3d; }
+  .flash.error { background: #fadbd8; color: #922b21; }
+  .total-box { text-align: right; font-size: 20px; font-weight: bold; margin: 12px 0; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 140px; }
+  @media (max-width: 600px) {
+    table, thead, tbody, th, td, tr { display: block; }
+    thead { display: none; }
+    tr { margin-bottom: 10px; border: 1px solid #e0e0e0; border-radius: 6px; padding: 6px; }
+    td { border: none; padding: 4px 8px; }
+    td::before { content: attr(data-label) ": "; font-weight: bold; color: #555; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Orçamentos</h1>
+</header>
+<nav>
+  <a href="{{ url_for('novo_orcamento') }}" class="{{ 'active' if request.endpoint == 'novo_orcamento' or request.endpoint == 'ver_orcamento' else '' }}">Orçamento</a>
+  <a href="{{ url_for('clientes') }}" class="{{ 'active' if request.endpoint == 'clientes' else '' }}">Clientes</a>
+  <a href="{{ url_for('catalogo', tabela='produtos') }}" class="{{ 'active' if request.path.startswith('/produtos') else '' }}">Produtos</a>
+  <a href="{{ url_for('catalogo', tabela='mao_de_obra') }}" class="{{ 'active' if request.path.startswith('/mao_de_obra') else '' }}">Mão de Obra</a>
+  <a href="{{ url_for('empresa') }}" class="{{ 'active' if request.endpoint == 'empresa' else '' }}">Empresa</a>
+</nav>
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, msg in messages %}
+      <div class="flash {{ category }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js').catch(function(){});
+}
+</script>
+</body>
+</html>

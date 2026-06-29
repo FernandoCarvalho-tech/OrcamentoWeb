@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ cfg.titulo }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Novo item - {{ cfg.titulo }}</h2>
+  <form method="POST">
+    <label>Descrição*</label>
+    <input type="text" name="descricao" required>
+    <div class="row">
+      <div>
+        <label>Unidade</label>
+        <input type="text" name="unidade" value="{{ cfg.unidade }}">
+      </div>
+      <div>
+        <label>{{ cfg.label_valor }}*</label>
+        <input type="text" name="valor" required>
+      </div>
+    </div>
+    <button type="submit">Salvar</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>{{ cfg.titulo }} cadastrados</h2>
+  <table>
+    <thead>
+      <tr><th>Descrição</th><th>Unidade</th><th>{{ cfg.label_valor }}</th><th>Ações</th></tr>
+    </thead>
+    <tbody>
+      {% for item in itens %}
+      <tr>
+        <td data-label="Descrição">{{ item.descricao }}</td>
+        <td data-label="Unidade">{{ item.unidade }}</td>
+        <td data-label="{{ cfg.label_valor }}">R$ {{ "%.2f"|format(item[cfg.campo_valor]) }}</td>
+        <td data-label="Ações">
+          <form method="POST" action="{{ url_for('excluir_catalogo', tabela=tabela, item_id=item.id) }}" style="display:inline;" onsubmit="return confirm('Excluir item?');">
+            <button type="submit" class="danger">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

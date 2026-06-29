@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Empresa{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Dados da Empresa</h2>
+  <form method="POST" enctype="multipart/form-data">
+    <label>Nome</label>
+    <input type="text" name="nome" value="{{ empresa.nome or '' }}">
+    <label>CNPJ</label>
+    <input type="text" name="cnpj" value="{{ empresa.cnpj or '' }}">
+    <label>Endereço</label>
+    <input type="text" name="endereco" value="{{ empresa.endereco or '' }}">
+    <div class="row">
+      <div>
+        <label>Telefone</label>
+        <input type="text" name="telefone" value="{{ empresa.telefone or '' }}">
+      </div>
+      <div>
+        <label>Email</label>
+        <input type="email" name="email" value="{{ empresa.email or '' }}">
+      </div>
+    </div>
+    <label>Logo</label>
+    <input type="file" name="logo" accept="image/*">
+    {% if empresa.logo_path %}<p style="font-size:13px;color:#777;">Logo atual configurada.</p>{% endif %}
+
+    <h3 style="margin-top:24px;">Configuração de Email (SMTP Gmail)</h3>
+    <div class="row">
+      <div>
+        <label>Servidor SMTP</label>
+        <input type="text" name="smtp_servidor" value="{{ empresa.smtp_servidor or 'smtp.gmail.com' }}">
+      </div>
+      <div>
+        <label>Porta</label>
+        <input type="number" name="smtp_porta" value="{{ empresa.smtp_porta or 587 }}">
+      </div>
+    </div>
+    <label>Usuário (seu email Gmail)</label>
+    <input type="email" name="smtp_usuario" value="{{ empresa.smtp_usuario or '' }}">
+    <label>Senha de app</label>
+    <input type="password" name="smtp_senha" value="{{ empresa.smtp_senha or '' }}">
+    <p style="font-size:13px;color:#777;">
+      Crie a senha de app em myaccount.google.com/apppasswords (requer verificação em duas etapas ativada).
+    </p>
+
+    <button type="submit">Salvar</button>
+  </form>
+</div>
+{% endblock %}

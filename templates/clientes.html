@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Clientes{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Novo Cliente</h2>
+  <form method="POST">
+    <label>Nome*</label>
+    <input type="text" name="nome" required>
+    <div class="row">
+      <div>
+        <label>Documento</label>
+        <input type="text" name="documento">
+      </div>
+      <div>
+        <label>Telefone</label>
+        <input type="text" name="telefone">
+      </div>
+    </div>
+    <label>Endereço</label>
+    <input type="text" name="endereco">
+    <label>Email</label>
+    <input type="email" name="email">
+    <button type="submit">Salvar</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Clientes cadastrados</h2>
+  <table>
+    <thead>
+      <tr><th>Nome</th><th>Documento</th><th>Telefone</th><th>Email</th><th>Ações</th></tr>
+    </thead>
+    <tbody>
+      {% for c in clientes %}
+      <tr>
+        <td data-label="Nome">{{ c.nome }}</td>
+        <td data-label="Documento">{{ c.documento or '' }}</td>
+        <td data-label="Telefone">{{ c.telefone or '' }}</td>
+        <td data-label="Email">{{ c.email or '' }}</td>
+        <td data-label="Ações">
+          <form method="POST" action="{{ url_for('excluir_cliente', cid=c.id) }}" style="display:inline;" onsubmit="return confirm('Excluir cliente?');">
+            <button type="submit" class="danger">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

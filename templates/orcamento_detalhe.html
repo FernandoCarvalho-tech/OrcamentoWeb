@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Orçamento #{{ orcamento.id }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Orçamento #{{ "%04d"|format(orcamento.id) }}</h2>
+  <p><strong>Cliente:</strong> {{ cliente.nome }}</p>
+  <p><strong>Data:</strong> {{ orcamento.data }} &nbsp; <strong>Validade:</strong> {{ orcamento.validade_dias }} dias</p>
+
+  <table>
+    <thead>
+      <tr><th>Tipo</th><th>Descrição</th><th>Un.</th><th>Qtd</th><th>Vl. Unit.</th><th>Vl. Total</th></tr>
+    </thead>
+    <tbody>
+      {% for item in itens %}
+      <tr>
+        <td data-label="Tipo">{{ 'Produto' if item.tipo == 'produto' else 'Mão de obra' }}</td>
+        <td data-label="Descrição">{{ item.descricao }}</td>
+        <td data-label="Un.">{{ item.unidade }}</td>
+        <td data-label="Qtd">{{ "%.2f"|format(item.quantidade) }}</td>
+        <td data-label="Vl. Unit.">R$ {{ "%.2f"|format(item.valor_unitario) }}</td>
+        <td data-label="Vl. Total">R$ {{ "%.2f"|format(item.valor_total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="total-box">Total: R$ {{ "%.2f"|format(orcamento.total) }}</div>
+
+  {% if orcamento.observacoes %}
+  <p><strong>Observações:</strong><br>{{ orcamento.observacoes }}</p>
+  {% endif %}
+
+  <a class="btn" href="{{ url_for('download_pdf', orcamento_id=orcamento.id) }}" target="_blank">Ver / baixar PDF</a>
+  <a class="btn secondary" href="{{ url_for('novo_orcamento') }}">Novo orçamento</a>
+</div>
+
+<div class="card">
+  <h2>Enviar por email</h2>
+  <form method="POST" action="{{ url_for('enviar_email', orcamento_id=orcamento.id) }}">
+    <label>Email do destinatário</label>
+    <input type="email" name="destinatario" value="{{ cliente.email or '' }}" required>
+    <button type="submit">Enviar</button>
+  </form>
+</div>
+{% endblock %}
