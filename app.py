@@ -4,8 +4,9 @@ import shutil
 from datetime import date
 from flask import (
     Flask, render_template, request, redirect, url_for, flash,
-    send_from_directory, jsonify
+    send_from_directory, jsonify, session
 )
+from werkzeug.security import check_password_hash, generate_password_hash
 from db import get_conn, init_db
 from pdf_gen import gerar_pdf_orcamento, OUTPUT_DIR
 from email_sender import enviar_orcamento_email
@@ -19,6 +20,66 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-troque-em-producao")
 
 with app.app_context():
     init_db()
+
+
+@app.before_request
+def exigir_login():
+    rotas_publicas = {"login", "static", "manifest", "service_worker"}
+    if request.endpoint in rotas_publicas or request.endpoint is None:
+        return
+    if not session.get("logado"):
+        return redirect(url_for("login", next=request.path))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        usuario = request.form.get("usuario", "").strip()
+        senha = request.form.get("senha", "")
+        conn = get_conn()
+        row = conn.execute("SELECT * FROM login_config WHERE id=1").fetchone()
+        conn.close()
+        if row and usuario == row["usuario"] and check_password_hash(row["senha_hash"], senha):
+            session["logado"] = True
+            session["usuario"] = usuario
+            destino = request.args.get("next") or url_for("novo_orcamento")
+            return redirect(destino)
+        flash("Usuário ou senha inválidos.", "error")
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+@app.route("/conta", methods=["GET", "POST"])
+def conta():
+    conn = get_conn()
+    if request.method == "POST":
+        novo_usuario = request.form.get("usuario", "").strip()
+        senha_atual = request.form.get("senha_atual", "")
+        nova_senha = request.form.get("nova_senha", "")
+        row = conn.execute("SELECT * FROM login_config WHERE id=1").fetchone()
+        if not check_password_hash(row["senha_hash"], senha_atual):
+            flash("Senha atual incorreta.", "error")
+        elif not novo_usuario or not nova_senha:
+            flash("Preencha usuário e nova senha.", "error")
+        else:
+            conn.execute(
+                "UPDATE login_config SET usuario=?, senha_hash=? WHERE id=1",
+                (novo_usuario, generate_password_hash(nova_senha)),
+            )
+            conn.commit()
+            session["usuario"] = novo_usuario
+            flash("Usuário e senha atualizados com sucesso.", "success")
+        conn.close()
+        return redirect(url_for("conta"))
+
+    row = conn.execute("SELECT * FROM login_config WHERE id=1").fetchone()
+    conn.close()
+    return render_template("conta.html", usuario_atual=row["usuario"])
 
 
 # ---------- Empresa ----------

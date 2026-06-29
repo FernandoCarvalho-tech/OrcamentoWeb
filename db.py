@@ -32,6 +32,20 @@ def init_db():
     cur.execute("INSERT OR IGNORE INTO empresa (id) VALUES (1)")
 
     cur.execute("""
+        CREATE TABLE IF NOT EXISTS login_config (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            usuario TEXT NOT NULL,
+            senha_hash TEXT NOT NULL
+        )
+    """)
+    if not cur.execute("SELECT 1 FROM login_config WHERE id = 1").fetchone():
+        from werkzeug.security import generate_password_hash
+        cur.execute(
+            "INSERT INTO login_config (id, usuario, senha_hash) VALUES (1, ?, ?)",
+            ("admin", generate_password_hash("admin123")),
+        )
+
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS clientes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,

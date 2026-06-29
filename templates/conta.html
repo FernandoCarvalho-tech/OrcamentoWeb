@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Minha Conta{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Alterar usuário e senha</h2>
+  <p style="font-size:13px;color:#777;">Usuário atual: <strong>{{ usuario_atual }}</strong></p>
+  <form method="POST">
+    <label>Senha atual*</label>
+    <input type="password" name="senha_atual" required>
+    <label>Novo usuário*</label>
+    <input type="text" name="usuario" value="{{ usuario_atual }}" required>
+    <label>Nova senha*</label>
+    <input type="password" name="nova_senha" required>
+    <button type="submit">Salvar</button>
+  </form>
+</div>
+{% endblock %}

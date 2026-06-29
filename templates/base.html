@@ -51,6 +51,8 @@
   <a href="{{ url_for('catalogo', tabela='produtos') }}" class="{{ 'active' if request.path.startswith('/produtos') else '' }}">Produtos</a>
   <a href="{{ url_for('catalogo', tabela='mao_de_obra') }}" class="{{ 'active' if request.path.startswith('/mao_de_obra') else '' }}">Mão de Obra</a>
   <a href="{{ url_for('empresa') }}" class="{{ 'active' if request.endpoint == 'empresa' else '' }}">Empresa</a>
+  <a href="{{ url_for('conta') }}" class="{{ 'active' if request.endpoint == 'conta' else '' }}">Conta</a>
+  <a href="{{ url_for('logout') }}">Sair</a>
 </nav>
 <main>
   {% with messages = get_flashed_messages(with_categories=true) %}
