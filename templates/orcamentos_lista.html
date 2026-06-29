@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Orçamentos{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Buscar orçamentos</h2>
+  <form method="GET">
+    <label>Cliente</label>
+    <input type="text" name="busca" value="{{ busca }}" placeholder="Nome do cliente">
+    <div class="row">
+      <div>
+        <label>Data início</label>
+        <input type="date" name="data_inicio" value="{{ data_inicio }}">
+      </div>
+      <div>
+        <label>Data fim</label>
+        <input type="date" name="data_fim" value="{{ data_fim }}">
+      </div>
+    </div>
+    <button type="submit">Filtrar</button>
+    <a class="btn secondary" href="{{ url_for('listar_orcamentos') }}">Limpar</a>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Orçamentos ({{ orcamentos|length }})</h2>
+  <table>
+    <thead>
+      <tr><th>Nº</th><th>Cliente</th><th>Data</th><th>Total</th><th>Ações</th></tr>
+    </thead>
+    <tbody>
+      {% for o in orcamentos %}
+      <tr>
+        <td data-label="Nº">{{ "%04d"|format(o.id) }}</td>
+        <td data-label="Cliente">{{ o.cliente_nome }}</td>
+        <td data-label="Data">{{ o.data }}</td>
+        <td data-label="Total">R$ {{ "%.2f"|format(o.total) }}</td>
+        <td data-label="Ações">
+          <a class="btn" href="{{ url_for('ver_orcamento', orcamento_id=o.id) }}">Ver</a>
+          <a class="btn secondary" href="{{ url_for('editar_orcamento', orcamento_id=o.id) }}">Editar</a>
+        </td>
+      </tr>
+      {% endfor %}
+      {% if not orcamentos %}
+      <tr><td colspan="5">Nenhum orçamento encontrado.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

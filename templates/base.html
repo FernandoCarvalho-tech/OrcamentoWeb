@@ -46,7 +46,8 @@
   <h1>Orçamentos</h1>
 </header>
 <nav>
-  <a href="{{ url_for('novo_orcamento') }}" class="{{ 'active' if request.endpoint == 'novo_orcamento' or request.endpoint == 'ver_orcamento' else '' }}">Orçamento</a>
+  <a href="{{ url_for('novo_orcamento') }}" class="{{ 'active' if request.endpoint in ('novo_orcamento', 'criar_orcamento') else '' }}">Novo Orçamento</a>
+  <a href="{{ url_for('listar_orcamentos') }}" class="{{ 'active' if request.endpoint in ('listar_orcamentos', 'ver_orcamento', 'editar_orcamento') else '' }}">Orçamentos</a>
   <a href="{{ url_for('clientes') }}" class="{{ 'active' if request.endpoint == 'clientes' else '' }}">Clientes</a>
   <a href="{{ url_for('catalogo', tabela='produtos') }}" class="{{ 'active' if request.path.startswith('/produtos') else '' }}">Produtos</a>
   <a href="{{ url_for('catalogo', tabela='mao_de_obra') }}" class="{{ 'active' if request.path.startswith('/mao_de_obra') else '' }}">Mão de Obra</a>

@@ -23,11 +23,11 @@
       <div class="flash">{{ msg }}</div>
     {% endfor %}
   {% endwith %}
-  <form method="POST">
+  <form method="POST" autocomplete="off">
     <label>Usuário</label>
-    <input type="text" name="usuario" autofocus required>
+    <input type="text" name="usuario" autofocus required autocomplete="off">
     <label>Senha</label>
-    <input type="password" name="senha" required>
+    <input type="password" name="senha" required autocomplete="off">
     <button type="submit">Entrar</button>
   </form>
 </div>

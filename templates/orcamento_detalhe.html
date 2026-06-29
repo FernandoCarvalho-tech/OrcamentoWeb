@@ -31,7 +31,8 @@
   {% endif %}
 
   <a class="btn" href="{{ url_for('download_pdf', orcamento_id=orcamento.id) }}" target="_blank">Ver / baixar PDF</a>
-  <a class="btn secondary" href="{{ url_for('novo_orcamento') }}">Novo orçamento</a>
+  <a class="btn secondary" href="{{ url_for('editar_orcamento', orcamento_id=orcamento.id) }}">Editar</a>
+  <a class="btn secondary" href="{{ url_for('listar_orcamentos') }}">Voltar à lista</a>
 </div>
 
 <div class="card">

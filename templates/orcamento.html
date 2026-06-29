@@ -1,19 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Novo Orçamento{% endblock %}
+{% block title %}{{ 'Editar Orçamento' if orcamento else 'Novo Orçamento' }}{% endblock %}
 {% block content %}
 <div class="card">
-  <h2>Novo Orçamento</h2>
-  <form id="form-orcamento" method="POST" action="{{ url_for('criar_orcamento') }}">
+  <h2>{{ 'Editar Orçamento #' ~ '%04d'|format(orcamento.id) if orcamento else 'Novo Orçamento' }}</h2>
+  <form id="form-orcamento" method="POST" action="{{ form_action }}">
     <label>Cliente*</label>
     <select id="cliente_id" name="cliente_id" required>
       <option value="">Selecione...</option>
       {% for c in clientes %}
-      <option value="{{ c.id }}">{{ c.nome }}</option>
+      <option value="{{ c.id }}" {{ 'selected' if orcamento and orcamento.cliente_id == c.id else '' }}>{{ c.nome }}</option>
       {% endfor %}
     </select>
 
     <label>Validade (dias)</label>
-    <input type="number" id="validade_dias" name="validade_dias" value="15">
+    <input type="number" id="validade_dias" name="validade_dias" value="{{ orcamento.validade_dias if orcamento else 15 }}">
 
     <input type="hidden" id="itens_json" name="itens_json">
 
@@ -53,15 +53,15 @@
     <div class="total-box">Total: R$ <span id="total-display">0.00</span></div>
 
     <label>Observações</label>
-    <textarea id="observacoes" name="observacoes" rows="3"></textarea>
+    <textarea id="observacoes" name="observacoes" rows="3">{{ orcamento.observacoes if orcamento else '' }}</textarea>
 
-    <button type="submit">Salvar e gerar PDF</button>
+    <button type="submit">{{ 'Salvar alterações e regerar PDF' if orcamento else 'Salvar e gerar PDF' }}</button>
   </form>
 </div>
 
 <script>
 const catalogo = {{ catalogo_json|safe }};
-let itens = [];
+let itens = {{ itens_existentes_json|safe }};
 
 function popularCatalogo() {
   const tipo = document.getElementById('tipo').value;
@@ -144,5 +144,6 @@ document.getElementById('form-orcamento').addEventListener('submit', function(e)
 });
 
 popularCatalogo();
+renderTabela();
 </script>
 {% endblock %}

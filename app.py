@@ -236,15 +236,46 @@ def index():
     return redirect(url_for("novo_orcamento"))
 
 
-@app.route("/orcamento/novo", methods=["GET"])
-def novo_orcamento():
+@app.route("/orcamentos", methods=["GET"])
+def listar_orcamentos():
+    busca = request.args.get("busca", "").strip()
+    data_inicio = request.args.get("data_inicio", "").strip()
+    data_fim = request.args.get("data_fim", "").strip()
+
+    query = """
+        SELECT o.*, c.nome AS cliente_nome
+        FROM orcamentos o
+        JOIN clientes c ON c.id = o.cliente_id
+        WHERE 1=1
+    """
+    params = []
+    if busca:
+        query += " AND c.nome ILIKE ?"
+        params.append(f"%{busca}%")
+    if data_inicio:
+        query += " AND o.data >= ?"
+        params.append(data_inicio)
+    if data_fim:
+        query += " AND o.data <= ?"
+        params.append(data_fim)
+    query += " ORDER BY o.id DESC"
+
+    conn = get_conn()
+    rows = conn.execute(query, tuple(params)).fetchall()
+    conn.close()
+    return render_template(
+        "orcamentos_lista.html", orcamentos=rows,
+        busca=busca, data_inicio=data_inicio, data_fim=data_fim,
+    )
+
+
+def _carregar_dados_form_orcamento():
     conn = get_conn()
     clientes_rows = conn.execute("SELECT * FROM clientes ORDER BY nome").fetchall()
     produtos_rows = conn.execute("SELECT * FROM produtos ORDER BY descricao").fetchall()
     mo_rows = conn.execute("SELECT * FROM mao_de_obra ORDER BY descricao").fetchall()
     conn.close()
 
-    clientes_json = [dict(r) for r in clientes_rows]
     catalogo_json = {
         "produto": [
             {"id": r["id"], "descricao": r["descricao"], "unidade": r["unidade"], "valor": r["preco_unitario"]}
@@ -255,11 +286,19 @@ def novo_orcamento():
             for r in mo_rows
         ],
     }
+    return clientes_rows, catalogo_json
+
+
+@app.route("/orcamento/novo", methods=["GET"])
+def novo_orcamento():
+    clientes_rows, catalogo_json = _carregar_dados_form_orcamento()
     return render_template(
         "orcamento.html",
         clientes=clientes_rows,
-        clientes_json=json.dumps(clientes_json),
         catalogo_json=json.dumps(catalogo_json),
+        orcamento=None,
+        itens_existentes_json="[]",
+        form_action=url_for("criar_orcamento"),
     )
 
 
@@ -308,15 +347,90 @@ def criar_orcamento():
     return redirect(url_for("ver_orcamento", orcamento_id=orcamento_id))
 
 
+@app.route("/orcamento/<int:orcamento_id>/editar", methods=["GET", "POST"])
+def editar_orcamento(orcamento_id):
+    conn = get_conn()
+    orcamento = conn.execute("SELECT * FROM orcamentos WHERE id=?", (orcamento_id,)).fetchone()
+    if not orcamento:
+        conn.close()
+        return "Não encontrado", 404
+
+    if request.method == "POST":
+        cliente_id = request.form.get("cliente_id")
+        validade = request.form.get("validade_dias") or 15
+        observacoes = request.form.get("observacoes") or ""
+        itens_json = request.form.get("itens_json") or "[]"
+
+        try:
+            itens = json.loads(itens_json)
+        except json.JSONDecodeError:
+            itens = []
+
+        if not cliente_id or not itens:
+            conn.close()
+            flash("Selecione um cliente e adicione ao menos um item.", "error")
+            return redirect(url_for("editar_orcamento", orcamento_id=orcamento_id))
+
+        total = sum(float(i["valor_total"]) for i in itens)
+
+        conn.execute(
+            "UPDATE orcamentos SET cliente_id=?, validade_dias=?, observacoes=?, total=? WHERE id=?",
+            (cliente_id, int(validade), observacoes, total, orcamento_id),
+        )
+        conn.execute("DELETE FROM orcamento_itens WHERE orcamento_id=?", (orcamento_id,))
+        for item in itens:
+            conn.execute(
+                """INSERT INTO orcamento_itens
+                   (orcamento_id, tipo, descricao, unidade, quantidade, valor_unitario, valor_total)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (orcamento_id, item["tipo"], item["descricao"], item.get("unidade", ""),
+                 float(item["quantidade"]), float(item["valor_unitario"]), float(item["valor_total"])),
+            )
+        conn.commit()
+
+        empresa = conn.execute("SELECT * FROM empresa WHERE id=1").fetchone()
+        cliente = conn.execute("SELECT * FROM clientes WHERE id=?", (cliente_id,)).fetchone()
+        orcamento_atualizado = conn.execute("SELECT * FROM orcamentos WHERE id=?", (orcamento_id,)).fetchone()
+        itens_db = conn.execute("SELECT * FROM orcamento_itens WHERE orcamento_id=?", (orcamento_id,)).fetchall()
+        conn.close()
+
+        gerar_pdf_orcamento(empresa, cliente, orcamento_atualizado, itens_db)
+
+        flash("Orçamento atualizado e PDF regerado com sucesso.", "success")
+        return redirect(url_for("ver_orcamento", orcamento_id=orcamento_id))
+
+    itens_db = conn.execute("SELECT * FROM orcamento_itens WHERE orcamento_id=?", (orcamento_id,)).fetchall()
+    clientes_rows, catalogo_json = _carregar_dados_form_orcamento()
+    conn.close()
+
+    itens_existentes = [
+        {
+            "tipo": i["tipo"], "descricao": i["descricao"], "unidade": i["unidade"],
+            "quantidade": i["quantidade"], "valor_unitario": i["valor_unitario"], "valor_total": i["valor_total"],
+        }
+        for i in itens_db
+    ]
+
+    return render_template(
+        "orcamento.html",
+        clientes=clientes_rows,
+        catalogo_json=json.dumps(catalogo_json),
+        orcamento=orcamento,
+        itens_existentes_json=json.dumps(itens_existentes),
+        form_action=url_for("editar_orcamento", orcamento_id=orcamento_id),
+    )
+
+
 @app.route("/orcamento/<int:orcamento_id>")
 def ver_orcamento(orcamento_id):
     conn = get_conn()
     orcamento = conn.execute("SELECT * FROM orcamentos WHERE id=?", (orcamento_id,)).fetchone()
+    if not orcamento:
+        conn.close()
+        return "Não encontrado", 404
     cliente = conn.execute("SELECT * FROM clientes WHERE id=?", (orcamento["cliente_id"],)).fetchone()
     itens = conn.execute("SELECT * FROM orcamento_itens WHERE orcamento_id=?", (orcamento_id,)).fetchall()
     conn.close()
-    if not orcamento:
-        return "Não encontrado", 404
     return render_template("orcamento_detalhe.html", orcamento=orcamento, cliente=cliente, itens=itens)
 
 
